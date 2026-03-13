@@ -96,7 +96,7 @@ StreamVerse
 Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/streamverse.git
+git clone https://github.com/AdnanMehraj2006/streamverse.git
 ```
 
 Open the project folder:
