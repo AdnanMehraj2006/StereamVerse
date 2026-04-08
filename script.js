@@ -238,3 +238,9 @@ placeholder.style.display="flex";
 togglePlaceholder();
 
 }
+
+/* linkedin redirect */
+
+document.getElementById("linkedinName").addEventListener("click",function(){
+window.open("https://linkedin.com/in/adnan-mehraj-611904344","_blank");
+});
