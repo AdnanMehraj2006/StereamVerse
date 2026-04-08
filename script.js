@@ -1,16 +1,9 @@
-/* background media wall */
+/* ================= BACKGROUND MEDIA WALL ================= */
 
 const thumbnails=[
-"ylDNZaYy9kY",
-"xeXV1KoX034",
-"jNQXAC9IVRw",
-"ysz5S6PUM-U",
-"kJQP7kiw5Fk",
-"dQw4w9WgXcQ",
-"9bZkp7q19f0",
-"3JZ_D3ELwOQ",
-"L_jWHffIx5E",
-"RgKAFK5djSk"
+"ylDNZaYy9kY","xeXV1KoX034","jNQXAC9IVRw","ysz5S6PUM-U",
+"kJQP7kiw5Fk","dQw4w9WgXcQ","9bZkp7q19f0","3JZ_D3ELwOQ",
+"L_jWHffIx5E","RgKAFK5djSk"
 ];
 
 const wall=document.querySelector(".media-wall");
@@ -30,33 +23,22 @@ const imgHeight=160;
 const cols=Math.ceil(window.innerWidth/imgWidth);
 const rows=Math.ceil(window.innerHeight/imgHeight);
 
-const total=cols*rows;
-
-for(let i=0;i<total;i++){
-
+for(let i=0;i<cols*rows;i++){
 let img=document.createElement("img");
 img.src=randomThumbnail();
 wall.appendChild(img);
-
 }
 
 }
 
 function rotateThumbnails(){
 
-const imgs=document.querySelectorAll(".media-wall img");
-
-imgs.forEach(img=>{
-
+document.querySelectorAll(".media-wall img").forEach(img=>{
 img.style.opacity=0;
-
 setTimeout(()=>{
-
 img.src=randomThumbnail();
 img.style.opacity=1;
-
 },400);
-
 });
 
 }
@@ -67,7 +49,27 @@ window.addEventListener("resize",buildWall);
 
 
 
-/* universal video player */
+/* ================= PLAYER ENGINE ================= */
+
+let hlsInstance=null;
+let dashInstance=null;
+
+function resetPlayers(video){
+if(hlsInstance){
+hlsInstance.destroy();
+hlsInstance=null;
+}
+
+if(dashInstance){
+dashInstance.reset();
+dashInstance=null;
+}
+
+video.pause();
+video.removeAttribute("src");
+video.load();
+
+}
 
 function playVideo(){
 
@@ -75,18 +77,19 @@ let url=document.getElementById("urlInput").value.trim();
 
 let iframe=document.getElementById("framePlayer");
 let video=document.getElementById("videoPlayer");
+let placeholder=document.getElementById("placeholder");
 
+/* hide everything */
 iframe.style.display="none";
 video.style.display="none";
 
 iframe.src="";
-video.pause();
-video.src="";
+resetPlayers(video);
 
-document.getElementById("placeholder").style.display="none";
+placeholder.style.display="none";
 
 
-/* Google Drive */
+/* ===== GOOGLE DRIVE ===== */
 
 if(url.includes("drive.google.com") || url.includes("drive.usercontent")){
 
@@ -105,7 +108,7 @@ iframe.style.display="block";
 }
 
 
-/* HLS stream (.m3u8) */
+/* ===== HLS (.m3u8) ===== */
 
 else if(url.includes(".m3u8")){
 
@@ -113,9 +116,9 @@ video.style.display="block";
 
 if(window.Hls && Hls.isSupported()){
 
-let hls=new Hls();
-hls.loadSource(url);
-hls.attachMedia(video);
+hlsInstance=new Hls();
+hlsInstance.loadSource(url);
+hlsInstance.attachMedia(video);
 
 }else{
 
@@ -126,7 +129,7 @@ video.src=url;
 }
 
 
-/* DASH stream (.mpd) */
+/* ===== DASH (.mpd) ===== */
 
 else if(url.includes(".mpd")){
 
@@ -134,8 +137,8 @@ video.style.display="block";
 
 if(window.dashjs){
 
-let player=dashjs.MediaPlayer().create();
-player.initialize(video,url,true);
+dashInstance=dashjs.MediaPlayer().create();
+dashInstance.initialize(video,url,true);
 
 }else{
 
@@ -146,17 +149,34 @@ video.src=url;
 }
 
 
-/* direct video */
+/* ===== DIRECT VIDEO (FINAL FIX) ===== */
 
 else if(url.match(/\.(mp4|webm|ogg)$/i)){
 
-video.src=url;
 video.style.display="block";
+
+/* FULL CLEAN RESET */
+
+video.pause();
+video.removeAttribute("src");
+video.load();
+
+/* ASSIGN SOURCE */
+
+video.src = url;
+
+/* IMPORTANT: wait for metadata */
+
+video.onloadeddata = () => {
+    video.play().catch(()=>{});
+};
+
+video.load();
 
 }
 
 
-/* fallback */
+/* ===== FALLBACK ===== */
 
 else{
 
@@ -169,7 +189,7 @@ iframe.style.display="block";
 
 
 
-/* placeholder animation control */
+/* ================= INPUT + PLACEHOLDER ================= */
 
 const urlInput=document.getElementById("urlInput");
 const marquee=document.querySelector(".placeholder-marquee");
@@ -192,41 +212,29 @@ clearBtn.style.display="none";
 }
 
 urlInput.addEventListener("input",togglePlaceholder);
-
-urlInput.addEventListener("paste",()=>{
-setTimeout(togglePlaceholder,50);
-});
-
+urlInput.addEventListener("paste",()=>setTimeout(togglePlaceholder,50));
 urlInput.addEventListener("blur",togglePlaceholder);
 
 
 
-/* clear function */
+/* ================= CLEAR FUNCTION ================= */
 
 function clearInput(){
 
-urlInput.value="";
-
 let iframe=document.getElementById("framePlayer");
 let video=document.getElementById("videoPlayer");
+let placeholder=document.getElementById("placeholder");
+
+urlInput.value="";
 
 iframe.src="";
-video.pause();
-video.src="";
+resetPlayers(video);
 
 iframe.style.display="none";
 video.style.display="none";
 
-document.getElementById("placeholder").style.display="flex";
+placeholder.style.display="flex";
 
 togglePlaceholder();
 
 }
-
-
-
-/* linkedin redirect */
-
-document.getElementById("linkedinName").addEventListener("click",function(){
-window.open("https://linkedin.com/in/adnan-mehraj-611904344","_blank");
-});
